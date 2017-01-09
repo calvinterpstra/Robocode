@@ -19,15 +19,15 @@ public class PredictiveShark extends AdvancedRobot {
     private boolean movingForward;
 
     private void init() {
-        setAdjustGunForRobotTurn(true);
-        setAdjustRadarForGunTurn(true);
-        setAdjustRadarForRobotTurn(true);
+//        setAdjustGunForRobotTurn(true);
+//        setAdjustRadarForGunTurn(true);
+//        setAdjustRadarForRobotTurn(true);
 
         // Set colors
         setBodyColor(new Color(200, 0, 0));
-        setGunColor(new Color(200, 0, 0));
+        setGunColor(new Color(255, 255, 255));
         setRadarColor(new Color(0, 0, 0));
-        setBulletColor(new Color(200, 0, 0));
+        setBulletColor(new Color(255, 255, 255));
         setScanColor(new Color(0, 0, 0));
 
         this.driveStage = 0;
@@ -77,24 +77,17 @@ public class PredictiveShark extends AdvancedRobot {
         double absoluteTargetBearing = (getHeading() + target.getBearing())%360;
         double targetRelativeHeading = (target.getHeading() + 360 - absoluteTargetBearing)%360;
         double targetVelocityX = target.getVelocity() * Math.sin(Math.toRadians(targetRelativeHeading));
-        double targetVelocityCoeffocient = 40;
         double targetDistance = target.getDistance();
+        double travelTime = targetDistance/Rules.getBulletSpeed(Rules.MAX_BULLET_POWER);
 
-        double myVelocityX = getVelocity() * Math.cos(Math.toRadians(targetRelativeHeading));
-        double myVelocityCoeffocient = 10;
-
-        double predictedAngleAddition = Math.toDegrees(Math.atan2(targetVelocityCoeffocient*targetVelocityX, targetDistance));
-        double motionOffsetAngle = Math.toDegrees(Math.atan2(myVelocityCoeffocient*myVelocityX, targetDistance));;
-        double predictiveTargetBearing = (absoluteTargetBearing + predictedAngleAddition + motionOffsetAngle)%360;
+        double predictedAngleAddition = Math.toDegrees(Math.atan2(travelTime*targetVelocityX, targetDistance));
+        double predictiveTargetBearing = (absoluteTargetBearing + predictedAngleAddition)%360;
         double bearingFromGun = normalRelativeAngleDegrees(predictiveTargetBearing - getGunHeading());
 
-        System.out.println("absoluteTargetBearing: " + absoluteTargetBearing + ", targetRelativeHeading: " + targetRelativeHeading + ", targetVelocityX: " + targetVelocityX + ", predictedAngleAddition: " + predictedAngleAddition + ", myVelocityX: " + myVelocityX + ", motionOffsetAngle: " + motionOffsetAngle);
+        System.out.println("absoluteTargetBearing: " + absoluteTargetBearing + ", targetRelativeHeading: " + targetRelativeHeading + ", targetVelocityX: " + targetVelocityX + ", predictedAngleAddition: " + predictedAngleAddition);
 
         setTurnGunRight(bearingFromGun);
-        if (getGunHeat() == 0) {
-            //fire(Math.min(1000/targetDistance, Rules.MAX_BULLET_POWER));
-            fire(Rules.MAX_BULLET_POWER);
-        }
+        setFire(Rules.MAX_BULLET_POWER);
     }
 
 
@@ -159,9 +152,6 @@ public class PredictiveShark extends AdvancedRobot {
         }
     }
 
-    /**
-     * onScannedRobot:  Fire!
-     */
     public void onScannedRobot(ScannedRobotEvent e) {
         this.targets.put(e.getName() , e);
     }

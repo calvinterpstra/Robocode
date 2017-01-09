@@ -16,6 +16,7 @@ public class CrazyTracker extends AdvancedRobot {
     boolean targeted;
     double absoluteBearing;
     double bearingFromGun;
+    String targetName;
 
     private void init() {
         setAdjustGunForRobotTurn(true);
@@ -34,6 +35,7 @@ public class CrazyTracker extends AdvancedRobot {
         this.targeted = false;
         this.absoluteBearing = 0;
         this.bearingFromGun = 0;
+        this.targetName = "";
     }
 
     private void runDrive(){
@@ -80,7 +82,7 @@ public class CrazyTracker extends AdvancedRobot {
             case 0:
                 // scanning
                 setScanColor(new Color(255, 0, 0));
-                setTurnGunRight(10);
+                setTurnGunRight(20);
                 if(targeted){
                     this.turretStage++;
                 }
@@ -89,20 +91,16 @@ public class CrazyTracker extends AdvancedRobot {
                 // targeted
                 setScanColor(new Color(0, 255, 0));
 
+                setTurnGunRight((bearingFromGun - 1)%360);
                 // If it's close enough, fire!
-                if (Math.abs(bearingFromGun) <= 3) {
-                    setTurnGunRight(bearingFromGun);
-                    // We check gun heat here, because calling fire()
-                    // uses a turn, which could cause us to lose track
-                    // of the other robot.
+                if (Math.abs(bearingFromGun) <= 5) {
                     if (getGunHeat() == 0) {
                         fire(Rules.MAX_BULLET_POWER);
                     }
-                } // otherwise just set the gun to turn.
-                // Note:  This will have no effect until we call scan()
-                else {
-                    setTurnGunRight(bearingFromGun);
                 }
+//                if (bearingFromGun == 0) {
+//                    scan();
+//                }
                 if(!targeted){
                     this.turretStage = 0;
                 }
@@ -158,27 +156,7 @@ public class CrazyTracker extends AdvancedRobot {
         // Calculate exact location of the robot
         this.absoluteBearing = getHeading() + e.getBearing();
         this.bearingFromGun = normalRelativeAngleDegrees(absoluteBearing - getGunHeading());
-//
-//        // If it's close enough, fire!
-//        if (Math.abs(bearingFromGun) <= 3) {
-//            setTurnGunRight(bearingFromGun);
-//            // We check gun heat here, because calling fire()
-//            // uses a turn, which could cause us to lose track
-//            // of the other robot.
-//            if (getGunHeat() == 0) {
-//                fire(Rules.MAX_BULLET_POWER);
-//            }
-//        } // otherwise just set the gun to turn.
-//        // Note:  This will have no effect until we call scan()
-//        else {
-//            setTurnGunRight(bearingFromGun);
-//        }
-//        // Generates another scan event if we see a robot.
-//        // We only need to call this if the gun (and therefore radar)
-//        // are not turning.  Otherwise, scan is called automatically.
-//        if (bearingFromGun == 0) {
-//            scan();
-//        }
+        this.targetName = e.getName();
     }
 
     /**
@@ -188,6 +166,12 @@ public class CrazyTracker extends AdvancedRobot {
         // If we're moving the other robot, reverse!
         if (e.isMyFault()) {
             reverseDirection();
+        }
+    }
+
+    public void onRobotDeath(RobotDeathEvent e){
+        if(e.getName().equals(targetName)){
+            this.targeted = false;
         }
     }
 }
