@@ -87,7 +87,10 @@ public class PredictiveShark extends AdvancedRobot {
         System.out.println("absoluteTargetBearing: " + absoluteTargetBearing + ", targetRelativeHeading: " + targetRelativeHeading + ", targetVelocityX: " + targetVelocityX + ", predictedAngleAddition: " + predictedAngleAddition);
 
         setTurnGunRight(bearingFromGun);
-        setFire(Rules.MAX_BULLET_POWER);
+
+        if (getGunHeat() == 0) {
+            setFire(Rules.MAX_BULLET_POWER);
+        }
     }
 
 
