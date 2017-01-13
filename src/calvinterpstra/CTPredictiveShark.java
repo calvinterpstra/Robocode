@@ -1,6 +1,8 @@
 package calvinterpstra;
 import robocode.*;
 import java.awt.*;
+import java.awt.geom.Point2D;
+
 import static robocode.util.Utils.normalRelativeAngleDegrees;
 //import java.awt.Color;
 
@@ -9,7 +11,7 @@ import static robocode.util.Utils.normalRelativeAngleDegrees;
 /**
  * CrazyTracker - a robot by (your name here)
  */
-public class CTCrazyPredictive extends AdvancedRobot {
+public class CTPredictiveShark extends AdvancedRobot {
     private boolean movingForward;
     private int driveStage;
     private int turretStage;
@@ -20,6 +22,7 @@ public class CTCrazyPredictive extends AdvancedRobot {
     private double bearingFromRadar;
     private boolean oscillator;
     private String targetName;
+    private int moveBack;
 
     private ScannedRobotEvent target;
     private ScannedRobotEvent targetLast;
@@ -47,46 +50,88 @@ public class CTCrazyPredictive extends AdvancedRobot {
         this.oscillator = true;
         this.target = null;
         this.targetLast = null;
+        this.moveBack = 0;
     }
 
     private void runDrive(){
         switch(this.driveStage) {
             case 0:
-                setAhead(40000);
-                movingForward = true;
-                this.driveStage++;
-                break;
-            case 1:
-                setTurnRight(90);
-                this.driveStage++;
-                break;
-            case 2:
-                if (new TurnCompleteCondition(this).test()){
-                    this.driveStage++;
-                }
-                break;
-            case 3:
-                setTurnLeft(180);
-                this.driveStage++;
-                break;
-            case 4:
-                if (new TurnCompleteCondition(this).test()){
-                    this.driveStage++;
-                }
-                break;
-            case 5:
-                setTurnRight(180);
-                this.driveStage++;
-                break;
-            case 6:
-                if (new TurnCompleteCondition(this).test()){
-                    this.driveStage = 0;
+                if (target != null){
+                    manageMove();
                 }
                 break;
             default:
                 break;
         }
     }
+    ////////////////////////////////////////////////////////////// Thanks in part to David Cincotta:
+    public void manageMove(){
+
+        double angle = Math.toRadians((getHeading() + target.getBearing() % 360));
+        double x = (getX() + Math.sin(angle) * target.getDistance());
+        double y = (getY() + Math.cos(angle) * target.getDistance());
+
+        if (target.getDistance()<=250){
+            double angleT = (robocode.util.Utils.normalRelativeAngleDegrees(absoluteBearing(getX(),getY(),x,y)) - getHeading() + 90)%360;
+            if (Math.abs(angleT) > 90.0) {
+                if (angleT > 0.0) {
+                    angleT -= 180.0;
+                }
+                else {
+                    angleT += 180.0;
+                }
+            }
+            if (moveBack % 100 > 50){
+                setTurnRight(angleT);
+                setAhead(1000);
+            }
+            else {
+                setTurnRight(-angleT);
+                setBack(1000);
+            }
+        }
+        else {
+            Point2D.Double enemyCenter = new Point2D.Double(x,y);
+            moveTo(enemyCenter);
+        }
+
+    }
+    double absoluteBearing(double x1, double y1, double x2, double y2) {
+        double xo = x2-x1;
+        double yo = y2-y1;
+        double hyp = Point2D.distance(x1, y1, x2, y2);
+        double arcSin = Math.toDegrees(Math.asin(xo / hyp));
+        double bearing = 0;
+
+        if (xo > 0 && yo > 0) { // both pos: lower-Left
+            bearing = arcSin;
+        } else if (xo < 0 && yo > 0) { // x neg, y pos: lower-right
+            bearing = 360 + arcSin; // arcsin is negative here, actuall 360 - ang
+        } else if (xo > 0 && yo < 0) { // x pos, y neg: upper-left
+            bearing = 180 - arcSin;
+        } else if (xo < 0 && yo < 0) { // both neg: upper-right
+            bearing = 180 - arcSin; // arcsin is negative here, actually 180 + ang
+        }
+
+        return bearing;
+    }
+    public void moveTo(Point2D point){
+        double distance = Point2D.distance(getX(),getY(),point.getX(),point.getY());
+        double angle = robocode.util.Utils.normalRelativeAngleDegrees(absoluteBearing(getX(),getY(),point.getX(),point.getY()) - getHeading());
+
+        if (Math.abs(angle) > 90.0) {
+            distance *= -1.0;
+            if (angle > 0.0) {
+                angle -= 180.0;
+            }
+            else {
+                angle += 180.0;
+            }
+        }
+        setTurnRight(angle);
+        setAhead(distance);
+    }
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 
     private void runTurret(){
         switch(this.turretStage) {
@@ -189,6 +234,7 @@ public class CTCrazyPredictive extends AdvancedRobot {
             this.runDrive();
             this.runTurret();
             this.runScanner();
+            moveBack++;
             execute();
         }
     }
