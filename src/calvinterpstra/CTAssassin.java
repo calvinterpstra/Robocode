@@ -11,14 +11,13 @@ import static robocode.util.Utils.normalRelativeAngleDegrees;
 /**
  * CrazyTracker - a robot by (your name here)
  */
-public class CTPredictiveShark extends AdvancedRobot {
-    private boolean movingForward;
+public class CTAssassin extends AdvancedRobot {
     private int driveStage;
     private int turretStage;
     private int scannerStage;
     private boolean targeted;
     private double absoluteBearing;
-    private double bearingFromGun;
+    //private double bearingFromGun;
     private double bearingFromRadar;
     private boolean oscillator;
     private String targetName;
@@ -27,24 +26,26 @@ public class CTPredictiveShark extends AdvancedRobot {
     private ScannedRobotEvent target;
     private ScannedRobotEvent targetLast;
 
+    private String assasinatee = "dec";
+
     private void init() {
         setAdjustGunForRobotTurn(true);
         setAdjustRadarForGunTurn(true);
         setAdjustRadarForRobotTurn(true);
 
         // Set colors
-        setBodyColor(new Color(0, 200, 0));
-        setGunColor(new Color(0, 150, 0));
+        setBodyColor(new Color(0, 0, 0));
+        setGunColor(new Color(255, 255, 255));
         setRadarColor(new Color(0, 0, 0));
-        setBulletColor(new Color(0, 200, 0));
-        setScanColor(new Color(255, 0, 0));
+        setBulletColor(new Color(255, 255, 255));
+        setScanColor(new Color(0, 0, 0));
 
         this.driveStage = 0;
         this.turretStage = 0;
         this.scannerStage = 0;
         this.targeted = false;
         this.absoluteBearing = 0;
-        this.bearingFromGun = 0;
+        //this.bearingFromGun = 0;
         this.bearingFromRadar = 0;
         this.targetName = "";
         this.oscillator = true;
@@ -71,7 +72,7 @@ public class CTPredictiveShark extends AdvancedRobot {
         double x = (getX() + Math.sin(angle) * target.getDistance());
         double y = (getY() + Math.cos(angle) * target.getDistance());
 
-        if (target.getDistance()<=250){
+        if (target.getDistance()<=400){
             double angleT = (robocode.util.Utils.normalRelativeAngleDegrees(absoluteBearing(getX(),getY(),x,y)) - getHeading() + 90)%360;
             if (Math.abs(angleT) > 90.0) {
                 if (angleT > 0.0) {
@@ -90,9 +91,25 @@ public class CTPredictiveShark extends AdvancedRobot {
                 setBack(1000);
             }
         }
+//        else {
+//            Point2D.Double targetCenter = new Point2D.Double(x,y);
+//            moveTo(targetCenter);
+//        }
         else {
-            Point2D.Double enemyCenter = new Point2D.Double(x,y);
-            moveTo(enemyCenter);
+            Point2D.Double targetCenter;
+            if (moveBack % 100 > 25){
+                targetCenter = new Point2D.Double(x+100,y);
+            }
+            else if (moveBack % 100 > 50){
+                targetCenter = new Point2D.Double(x,y-100);
+            }
+            else if (moveBack % 100 > 75){
+                targetCenter = new Point2D.Double(x-100,y);
+            }
+            else {
+                targetCenter = new Point2D.Double(x,y+100);
+            }
+            moveTo(targetCenter);
         }
 
     }
@@ -136,24 +153,11 @@ public class CTPredictiveShark extends AdvancedRobot {
     private void runTurret(){
         switch(this.turretStage) {
             case 0:
-                //setScanColor(new Color(255, 0, 0));
-//                setTurnRadarRight(20);
-                //setTurnGunRight(20);
                 if(targeted){
                     this.turretStage++;
                 }
                 break;
             case 1:
-//                if (this.oscillator){
-//                    setTurnRadarRight(this.bearingFromRadar + 20);
-//                    this.oscillator = false;
-//                    setScanColor(new Color(0, 0, 0));
-//                }
-//                else {
-//                    setTurnRadarRight(this.bearingFromRadar - 20);
-//                    this.oscillator = true;
-//                    setScanColor(new Color(0, 255, 0));
-//                }
                 if (target != null && targetLast != null) {
                     attackTargetPredictive();
                 }
@@ -168,13 +172,11 @@ public class CTPredictiveShark extends AdvancedRobot {
     }
 
     private void runScanner(){
-        switch(this.turretStage) {
+        switch(this.scannerStage) {
             case 0:
-                //setScanColor(new Color(255, 0, 0));
                 setTurnRadarRight(20);
-                //setTurnGunRight(20);
                 if(targeted){
-                    this.turretStage++;
+                    this.scannerStage++;
                 }
                 break;
             case 1:
@@ -186,13 +188,10 @@ public class CTPredictiveShark extends AdvancedRobot {
                 else {
                     setTurnRadarRight(this.bearingFromRadar - 20);
                     this.oscillator = true;
-                    setScanColor(new Color(0, 255, 0));
+                    setScanColor(new Color(255, 255, 255));
                 }
-//                if (target != null) {
-//                    attackTargetPredictive();
-//                }
                 if(!targeted){
-                    this.turretStage = 0;
+                    this.scannerStage = 0;
                 }
                 break;
             default:
@@ -240,36 +239,33 @@ public class CTPredictiveShark extends AdvancedRobot {
     }
 
     public void onHitWall(HitWallEvent e) {
-        reverseDirection();
+        this.moveBack += 50;
     }
 
-    public void reverseDirection() {
-        if (movingForward) {
-            setBack(40000);
-            movingForward = false;
-        } else {
-            setAhead(40000);
-            movingForward = true;
-        }
-    }
 
     public void onScannedRobot(ScannedRobotEvent e) {
-        if (target != null) {
-            if (e.getName().equals(target.getName())) {
-                this.targetLast = target;
+        System.out.println(e.getName());
+        if (e.getName().contains(this.assasinatee)) {
+            if (target != null) {
+                if (e.getName().equals(target.getName())) {
+                    this.targetLast = target;
+                }
             }
+            this.targeted = true;
+            this.absoluteBearing = getHeading() + e.getBearing();
+            //this.bearingFromGun = normalRelativeAngleDegrees(absoluteBearing - getGunHeading());
+            this.bearingFromRadar = normalRelativeAngleDegrees(absoluteBearing - getRadarHeading());
+            this.targetName = e.getName();
+            this.target = e;
         }
-        this.targeted = true;
-        this.absoluteBearing = getHeading() + e.getBearing();
-        this.bearingFromGun = normalRelativeAngleDegrees(absoluteBearing - getGunHeading());
-        this.bearingFromRadar = normalRelativeAngleDegrees(absoluteBearing - getRadarHeading());
-        this.targetName = e.getName();
-        this.target = e;
+        else {
+            //scan();
+        }
     }
 
     public void onHitRobot(HitRobotEvent e) {
         if (e.isMyFault()) {
-            reverseDirection();
+            this.moveBack += 50;
         }
     }
 

@@ -1,6 +1,6 @@
 <component name="libraryTable">
-  <library name="net.sf.robocode:robocode.api:1.9.2.1" type="repository">
-    <properties maven-id="net.sf.robocode:robocode.api:1.9.2.1" />
+  <library name="net.sf.robocode:robocode.api:Latest" type="repository">
+    <properties maven-id="net.sf.robocode:robocode.api:LATEST" />
     <CLASSES>
       <root url="jar://$MAVEN_REPOSITORY$/net/sf/robocode/robocode.api/1.9.2.1/robocode.api-1.9.2.1.jar!/" />
     </CLASSES>
